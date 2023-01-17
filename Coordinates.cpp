@@ -1,5 +1,7 @@
 #include "Coordinates.h"
 
+#include <iostream>
+
 Coordinates::Coordinates()
 {
 	this->cnt = 0;
@@ -106,6 +108,20 @@ void Coordinates::clear_coord()
 		for (int j = 0; j < dim_cnt; j++) {
 			coordinates[j][i] = 0;
 		}
+	}
+}
+
+
+void Coordinates::print()
+{
+	for (int i = 0; i < cnt; i++) {
+		std::cout << i << ".: (";
+
+		for (int j = 0; j < dim_cnt; j++) {
+			std::cout << coordinates[j][i] << " ";
+		}
+
+		std::cout << ")" << std::endl;
 	}
 }
 

@@ -1,7 +1,7 @@
 #include "Points.h"
 #include "Centroids.h"
 #include "DataHandler.h"
-#include "KMeansAlg.h"
+#include "KMeansAlg.cuh"
 
 #include <cstdlib>
 #include <iostream>
@@ -24,9 +24,16 @@ int main()
 
 	std::cout << "CPU version start" << std::endl;
 	KMeansAlg::cpu_version(points, centroids);
-	std::cout << "CPU version stop" << std::endl;
-
+ 	std::cout << "CPU version stop" << std::endl;
 	DataHandler::Serialize("Data/cpu_result.json", points, centroids);
+
+	points.clear_indexes();
+	KMeansAlg::init_centroids(centroids, points);
+
+	std::cout << "CPU version start" << std::endl;
+	KMeansAlg::thrust_version(points, centroids);
+	std::cout << "CPU version stop" << std::endl;
+	DataHandler::Serialize("Data/thrust_result.json", points, centroids);
 
 	return EXIT_SUCCESS;
 }

@@ -21,5 +21,6 @@ public:
 	~Points();
 
 	void clear_indexes();
+	void print();
 };
 

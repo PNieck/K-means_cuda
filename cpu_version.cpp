@@ -1,6 +1,6 @@
 #pragma once
 
-#include "KMeansAlg.h"
+#include "KMeansAlg.cuh"
 
 
 float calculate_distance_sqared(const Points& points, int point_index, const Centroids& centroids, int centroid_index)
@@ -61,8 +61,8 @@ void recalculate_centroids(const Points& points, Centroids& centroids, int* buff
 
 		for (int j = 0; j < points.dim_cnt; j++) {
 			centroids.coordinates[j][centr_index] += points.coordinates[j][i];
-			buff[centr_index]++;
 		}
+		buff[centr_index]++;
 	}
 
 	for (int i = 0; i < centroids.cnt; i++) {
@@ -75,13 +75,23 @@ void recalculate_centroids(const Points& points, Centroids& centroids, int* buff
 
 void KMeansAlg::cpu_version(Points& points, Centroids& centroids, float threshold, int max_it)
 {
-	int iteration = 0;
+	int iterations = 0;
 	int cent_changes = points.cnt;
 	int* buff = new int[centroids.cnt];
 
-	while (cent_changes / points.cnt >= threshold && iteration <= max_it) {
+	//points.print();
+	//centroids.print();
+
+	while (cent_changes / points.cnt >= threshold && iterations <= max_it) {
 		cent_changes = find_nearest_centroids(points, centroids);
+
+		//points.print();
+		//centroids.print();
+
 		recalculate_centroids(points, centroids, buff);
+
+		//points.print();
+		//centroids.print();
 	}
 
 	delete[] buff;

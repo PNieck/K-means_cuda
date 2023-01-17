@@ -17,6 +17,7 @@ public:
 	~Coordinates();
 
 	void clear_coord();
+	virtual void print();
 
 private:
 	void RewriteValues(const Coordinates& coordinates);

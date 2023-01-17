@@ -77,7 +77,9 @@
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <CudaCompile Include="help_thrust.cu" />
     <CudaCompile Include="kernel.cu" />
+    <CudaCompile Include="thrust.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Centroids.cpp" />
@@ -93,9 +95,10 @@
     <ClInclude Include="Centroids.h" />
     <ClInclude Include="Coordinates.h" />
     <ClInclude Include="DataHandler.h" />
+    <ClInclude Include="help_thrust.cuh" />
     <ClInclude Include="JsonCpp\json\json-forwards.h" />
     <ClInclude Include="JsonCpp\json\json.h" />
-    <ClInclude Include="KMeansAlg.h" />
+    <ClInclude Include="KMeansAlg.cuh" />
     <ClInclude Include="Points.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

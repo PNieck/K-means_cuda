@@ -55,7 +55,7 @@ def main():
             "centroid" : belongings[i],
             "coordinates": coordinates[i]
         })
-    
+     
     json_data = {
         "coord_cnt": args.coord_cnt,
         "centroids": centroids,

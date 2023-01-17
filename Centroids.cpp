@@ -1,6 +1,7 @@
 #include "Centroids.h"
 
 #include <utility>
+#include <iostream>
 
 Centroids::Centroids() : Coordinates() {}
 
@@ -25,3 +26,12 @@ Centroids& Centroids::operator=(Centroids&& centroids)
 }
 
 Centroids::~Centroids() {}
+
+
+void Centroids::print()
+{
+	std::cout << std::endl;
+	std::cout << "Centroids:" << std::endl;
+
+	Coordinates::print();
+}

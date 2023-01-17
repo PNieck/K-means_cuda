@@ -1,6 +1,6 @@
 #pragma once
 
-#include "KMeansAlg.h"
+#include "KMeansAlg.cuh"
 
 #include <stdexcept>
 

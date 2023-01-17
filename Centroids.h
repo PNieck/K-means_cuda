@@ -14,5 +14,6 @@ public:
 	Centroids& operator=(Centroids&& centroids);
 
 	~Centroids();
+	void print();
 };
 

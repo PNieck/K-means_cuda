@@ -1,6 +1,7 @@
 #include "Points.h"
 
 #include <utility>
+#include <iostream>
 
 Points::Points() : Coordinates()
 {
@@ -80,4 +81,21 @@ void Points::clear_indexes()
 {
 	for (int i = 0; i < cnt; i++)
 		centroids_indexes[i] = -1;
+}
+
+
+void Points::print()
+{
+	std::cout << std::endl;
+	std::cout << "Points:" << std::endl;
+
+	Coordinates::print();
+
+	std::cout << "Centroid indexes:" << std::endl;
+
+	std::cout << "(";
+	for (int i = 0; i < cnt; i++) {
+		std::cout << centroids_indexes[i] << " ";
+	}
+	std::cout << ")\n";
 }
