@@ -1,0 +1,73 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CudaCompile Include="kernel.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="JsonCpp">
+      <UniqueIdentifier>{8f8e9107-b66b-434f-ae6c-df2bf537a10a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Points">
+      <UniqueIdentifier>{7aae4cfa-a842-44fb-b9bb-1019b708bded}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DataHandler">
+      <UniqueIdentifier>{e93ee9ec-2bce-4f68-8038-05e32de7ce19}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Coordinates">
+      <UniqueIdentifier>{59cfd877-1211-476d-b011-7322b0abf93e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Centroids">
+      <UniqueIdentifier>{dbe0dce4-4053-4f5b-8224-a3c03a015161}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="K_means">
+      <UniqueIdentifier>{abce26ce-fbe4-4c95-ab3f-6d478980f121}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="JsonCpp\json\json-forwards.h">
+      <Filter>JsonCpp</Filter>
+    </ClInclude>
+    <ClInclude Include="JsonCpp\json\json.h">
+      <Filter>JsonCpp</Filter>
+    </ClInclude>
+    <ClInclude Include="Points.h">
+      <Filter>Points</Filter>
+    </ClInclude>
+    <ClInclude Include="DataHandler.h">
+      <Filter>DataHandler</Filter>
+    </ClInclude>
+    <ClInclude Include="Coordinates.h">
+      <Filter>Coordinates</Filter>
+    </ClInclude>
+    <ClInclude Include="Centroids.h">
+      <Filter>Centroids</Filter>
+    </ClInclude>
+    <ClInclude Include="KMeansAlg.h">
+      <Filter>K_means</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="JsonCpp\jsoncpp.cpp">
+      <Filter>JsonCpp</Filter>
+    </ClCompile>
+    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Points.cpp">
+      <Filter>Points</Filter>
+    </ClCompile>
+    <ClCompile Include="DataHandler.cpp">
+      <Filter>DataHandler</Filter>
+    </ClCompile>
+    <ClCompile Include="Coordinates.cpp">
+      <Filter>Coordinates</Filter>
+    </ClCompile>
+    <ClCompile Include="Centroids.cpp">
+      <Filter>Centroids</Filter>
+    </ClCompile>
+    <ClCompile Include="cpu_version.cpp">
+      <Filter>K_means</Filter>
+    </ClCompile>
+    <ClCompile Include="common.cpp">
+      <Filter>K_means</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
