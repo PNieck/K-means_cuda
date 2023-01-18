@@ -5,7 +5,7 @@
     <CudaCompile Include="thrust.cu">
       <Filter>K_means</Filter>
     </CudaCompile>
-    <CudaCompile Include="help_thrust.cu">
+    <CudaCompile Include="Thrust2.cu">
       <Filter>K_means</Filter>
     </CudaCompile>
   </ItemGroup>
@@ -49,9 +49,6 @@
       <Filter>Centroids</Filter>
     </ClInclude>
     <ClInclude Include="KMeansAlg.cuh">
-      <Filter>K_means</Filter>
-    </ClInclude>
-    <ClInclude Include="help_thrust.cuh">
       <Filter>K_means</Filter>
     </ClInclude>
   </ItemGroup>

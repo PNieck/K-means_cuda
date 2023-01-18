@@ -2,6 +2,10 @@
 
 #include "KMeansAlg.cuh"
 
+#include "cuda_runtime.h"
+
+#include <iostream>
+
 
 float calculate_distance_sqared(const Points& points, int point_index, const Centroids& centroids, int centroid_index)
 {
@@ -75,24 +79,30 @@ void recalculate_centroids(const Points& points, Centroids& centroids, int* buff
 
 void KMeansAlg::cpu_version(Points& points, Centroids& centroids, float threshold, int max_it)
 {
+	cudaEvent_t stop, start;
+	float time;
+
+	cudaEventCreate(&stop);
+	cudaEventCreate(&start);
+
+	cudaEventRecord(start, 0);
+
 	int iterations = 0;
 	int cent_changes = points.cnt;
 	int* buff = new int[centroids.cnt];
 
-	//points.print();
-	//centroids.print();
-
 	while (cent_changes / points.cnt >= threshold && iterations <= max_it) {
 		cent_changes = find_nearest_centroids(points, centroids);
 
-		//points.print();
-		//centroids.print();
-
 		recalculate_centroids(points, centroids, buff);
-
-		//points.print();
-		//centroids.print();
 	}
 
 	delete[] buff;
+
+	cudaEventRecord(stop, 0);
+	cudaEventElapsedTime(&time, start, stop);
+	std::cout << "CPU version time: " << time << " (milliseconds)" << std::endl;
+
+	cudaEventDestroy(start);
+	cudaEventDestroy(stop);
 }

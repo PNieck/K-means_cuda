@@ -12,7 +12,24 @@
 #include <thrust/count.h>
 #include <thrust/transform_reduce.h>
 
-#include "help_thrust.cuh"
+#include "cuda_runtime.h"
+
+
+struct ThrustData
+{
+	int dim_cnt;
+	int points_cnt;
+	int centr_cnt;
+
+	thrust::device_vector<float>* points_coord;
+	thrust::device_vector<int> centr_indexes;
+
+	thrust::device_vector<int> new_centr_indexes;
+	thrust::device_vector<float> min_dist;
+	thrust::device_vector<float> act_dist;
+
+	thrust::host_vector<float>* centr_coord;
+};
 
 
 ThrustData createThrustData(const Points& points, const Centroids& centroids)
@@ -126,8 +143,8 @@ int find_nearest_centroids(ThrustData& data)
 	}
 
 	int result = thrust::count_if(thrust::make_zip_iterator(data.centr_indexes.begin(), data.new_centr_indexes.begin()),
-							thrust::make_zip_iterator(data.centr_indexes.end(),   data.new_centr_indexes.end()),
-							count_new_centroids_functor());
+								  thrust::make_zip_iterator(data.centr_indexes.end(),   data.new_centr_indexes.end()),
+								  count_new_centroids_functor());
 
 	thrust::transform(thrust::make_zip_iterator(data.centr_indexes.begin(), data.new_centr_indexes.begin()),
 		thrust::make_zip_iterator(data.centr_indexes.end(), data.new_centr_indexes.end()),
@@ -162,10 +179,10 @@ void recalculate_centroids(ThrustData& data)
 
 		for (int j = 0; j < data.dim_cnt; j++) {
 			 float val = thrust::transform_reduce(thrust::make_zip_iterator(data.points_coord[j].begin(), data.centr_indexes.begin()),
-															  thrust::make_zip_iterator(data.points_coord[j].end(), data.centr_indexes.end()),
-															  equal_functor(i),
-															  0,
-															  thrust::plus<float>());
+												  thrust::make_zip_iterator(data.points_coord[j].end(), data.centr_indexes.end()),
+												  equal_functor(i),
+												  0,
+												  thrust::plus<float>());
 			 if (elems == 0) {
 				 data.centr_coord[j][i] = std::numeric_limits<float>::infinity();
 			 }
@@ -189,19 +206,33 @@ void create_result(const ThrustData& data, Points& points, Centroids& centroids)
 
 void KMeansAlg::thrust_version(Points& points, Centroids& centroids, float threshold, int max_it)
 {
+	cudaEvent_t stop, start;
+	float time, time_data;
+
+	cudaEventCreate(&stop);
+	cudaEventCreate(&start);
+
+	cudaEventRecord(start, 0);
+	
 	ThrustData data = createThrustData(points, centroids);
-	//print_thrust_data(data);
 
 	int iterations = 0;
 	int cent_changes = points.cnt;
 
 	while (cent_changes / points.cnt > threshold && iterations < max_it) {
-		cent_changes = find_nearest_centroids(data);
-		//print_thrust_data(data); 
+		cent_changes = find_nearest_centroids(data); 
 
 		recalculate_centroids(data);
-		//print_thrust_data(data);
 	}
 
 	create_result(data, points, centroids);
+
+	cudaEventRecord(stop, 0);
+
+	cudaEventRecord(stop, 0);
+	cudaEventElapsedTime(&time, start, stop);
+	std::cout << "GPU version 1 time: " << time << " (milliseconds). With memory copying " << std::endl;
+
+	cudaEventDestroy(start);
+	cudaEventDestroy(stop);
 }
