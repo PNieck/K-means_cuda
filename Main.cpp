@@ -1,7 +1,7 @@
-#include "Points.h"
-#include "Centroids.h"
-#include "DataHandler.h"
-#include "KMeansAlg.cuh"
+#include "Includes/Points.h"
+#include "Includes/Centroids.h"
+#include "Includes/DataHandler.h"
+#include "Includes/KMeansAlg.cuh"
 
 #include <cstdlib>
 #include <iostream>
@@ -20,6 +20,7 @@ int main()
 	Points points;
 	Centroids centroids;
 
+	std::cout << "Loading Data" << std::endl << std::endl;
 	DataHandler::Deserialize("Data/input_data.json", points, centroids);
 	//DataHandler::Serialize("Data/read_data.json", points, centroids);
 
@@ -28,9 +29,26 @@ int main()
 		return EXIT_FAILURE;
 	}
 
+	/*
+	 *	CPU method
+	 */
 	perform_test("CPU", KMeansAlg::cpu_version, points, centroids);
-	perform_test("Thrust1", KMeansAlg::thrust_version, points, centroids);
+
+	/*
+	 *	Separate vector for all dimensions
+	 */
+	perform_test("Thrust1", KMeansAlg::thrust1_version, points, centroids);
+
+	/*
+	 *	One vector for all coordinates. Consistent space for every point
+	 *	(points side by side)
+	 */
 	perform_test("Thrust2", KMeansAlg::thrust2_version, points, centroids);
+
+	/*
+	 *	One vector for all coordinates. Inconsistent space for every point
+	 *	(coordinates from same dimension side by side)
+	 */
 	perform_test("Thrust3", KMeansAlg::thrust3_version, points, centroids);
 
 	return EXIT_SUCCESS;
@@ -53,5 +71,7 @@ void perform_test(std::string test_name, int (*func)(Points&, Centroids&, float,
 	k_means.stop_timer();
 	std::cout << test_name << " version was working for " << k_means.timer_result()
 		<< " seconds. Iterations number: " << iterations << std::endl << std::endl;
-	DataHandler::Serialize("Data/" + test_name + "_result.json", points, centroids);
+
+	//DataHandler::Serialize("Data/" + test_name + "_result.json", points, centroids);
+	DataHandler::SimpleSerialize("Data/" + test_name + "_result.json", centroids);
 }

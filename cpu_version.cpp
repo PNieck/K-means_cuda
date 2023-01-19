@@ -1,6 +1,6 @@
 #pragma once
 
-#include "KMeansAlg.cuh"
+#include "Includes/KMeansAlg.cuh"
 
 #include "cuda_runtime.h"
 

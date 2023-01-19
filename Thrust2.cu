@@ -1,9 +1,9 @@
 #pragma once
 
-#include "KMeansAlg.cuh"
+#include "Includes/KMeansAlg.cuh"
 
-#include "Points.h"
-#include "Centroids.h"
+#include "Includes/Points.h"
+#include "Includes/Centroids.h"
 
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>

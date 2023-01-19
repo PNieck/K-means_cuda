@@ -1,6 +1,6 @@
 #pragma once
 
-#include "KMeansAlg.cuh"
+#include "Includes/KMeansAlg.cuh"
 
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
@@ -186,7 +186,7 @@ void create_result(const ThrustData& data, Points& points, Centroids& centroids)
 }
 
 
-int KMeansAlg::thrust_version(Points& points, Centroids& centroids, float threshold, int max_it)
+int KMeansAlg::thrust1_version(Points& points, Centroids& centroids, float threshold, int max_it)
 {
 	ThrustData data = createThrustData(points, centroids);
 

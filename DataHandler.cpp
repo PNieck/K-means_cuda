@@ -1,4 +1,4 @@
-#include "DataHandler.h"
+#include "Includes/DataHandler.h"
 
 #include <fstream>
 
@@ -46,11 +46,11 @@ void DataHandler::Deserialize(const std::string& path, Points& points, Centroids
 
 Json::Value SerializePoints(const Points& points)
 {
-	Json::Value points_arr;
+	Json::Value points_arr(Json::arrayValue);
 	Json::Value one_point;
 	Json::Value point_coord(Json::arrayValue);
 
-	/*for (int i = 0; i < points.cnt; i++)
+	for (int i = 0; i < points.cnt; i++)
 	{
 		for (int j = 0; j < points.dim_cnt; j++)
 		{
@@ -59,12 +59,10 @@ Json::Value SerializePoints(const Points& points)
 
 		one_point["centroid"] = points.centroids_indexes[i];
 		one_point["coordinates"] = point_coord;
-		point_coord.clear(); 
+		point_coord.clear();
 
 		points_arr.append(one_point);
-	}*/
-
-	points_arr["centroids"] = points.centroids_indexes;
+	}
 
 	return points_arr;
 }
@@ -97,6 +95,47 @@ void DataHandler::Serialize(const std::string& path, const Points& points, const
 
 	result["centroids"] = SerializeCentroids(centroids);
 	result["points"] = SerializePoints(points);
+
+	std::ofstream output(path);
+
+	if (!output.good()) {
+		throw std::invalid_argument("Cannot open file: " + path);
+	}
+
+	output << result;
+
+	output.close();
+}
+
+
+Json::Value SimpleSerializeCentroids(const Centroids& centroids)
+{
+	Json::Value centroids_arr(Json::arrayValue);
+	Json::Value one_centroid;
+	Json::Value centroid_coord(Json::arrayValue);
+
+	for (int i = 0; i < centroids.cnt; i++)
+	{
+		for (int j = 0; j < centroids.dim_cnt; j++)
+		{
+			centroid_coord.append(centroids.coordinates[j][i]);
+		}
+
+		one_centroid["coordinates"] = centroid_coord;
+		centroid_coord.clear();
+
+		centroids_arr.append(one_centroid);
+	}
+
+	return centroids_arr;
+}
+
+
+void DataHandler::SimpleSerialize(const std::string& path, const Centroids& centroids)
+{
+	Json::Value result;
+
+	result["Centroids"] = SimpleSerializeCentroids(centroids);
 
 	std::ofstream output(path);
 

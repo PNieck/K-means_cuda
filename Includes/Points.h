@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "Coordinates.h"
+#include "Includes/Coordinates.h"
 
 class Points: public Coordinates
 {
