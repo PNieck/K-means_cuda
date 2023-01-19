@@ -2,28 +2,15 @@
 
 #include "KMeansAlg.cuh"
 
-#include "Points.h"
-#include "Centroids.h"
-
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
-#include <thrust/iterator/counting_iterator.h>
-#include <thrust/iterator/transform_iterator.h>
-#include <thrust/iterator/permutation_iterator.h>
-#include <thrust/iterator/zip_iterator.h>
-#include <thrust/iterator/discard_iterator.h>
-#include <thrust/for_each.h>
-#include <thrust/fill.h>
-#include <thrust/transform.h>
-#include <thrust/reduce.h>
 #include <thrust/count.h>
+#include <thrust/iterator/discard_iterator.h>
 #include <thrust/zip_function.h>
-#include <thrust/execution_policy.h>
-
-#include <iterator>
+#include <thrust/transform_reduce.h>
 
 
-struct Thrust2Data
+struct Thrust3Data
 {
 	int dim_cnt;
 	int points_cnt;
@@ -43,19 +30,20 @@ struct Thrust2Data
 };
 
 
-Thrust2Data createThrust2Data(const Points& points, const Centroids& centroids)
+Thrust3Data createThrust3Data(const Points& points, const Centroids& centroids)
 {
-	Thrust2Data result;
+	Thrust3Data result;
 
 	result.dim_cnt = points.dim_cnt;
 	result.points_cnt = points.cnt;
 	result.centr_cnt = centroids.cnt;
 
 	result.points_coord = thrust::device_vector<float>(points.cnt * points.dim_cnt);
+
 	thrust::host_vector<float> temp = thrust::host_vector<float>(points.cnt * points.dim_cnt);
-	for (int i = 0; i < result.dim_cnt; i++) {
-		for (int j = 0; j < result.points_cnt; j++) {
-			temp[i + j * result.dim_cnt] = points.coordinates[i][j];
+	for (int i = 0; i < result.points_cnt; i++) {
+		for (int j = 0; j < result.dim_cnt; j++) {
+			temp[j * result.points_cnt + i] = points.coordinates[j][i];
 		}
 	}
 	thrust::copy(temp.begin(), temp.end(), result.points_coord.begin());
@@ -70,9 +58,9 @@ Thrust2Data createThrust2Data(const Points& points, const Centroids& centroids)
 
 	result.centr_coord = thrust::device_vector<float>(centroids.cnt * centroids.dim_cnt);
 	temp = thrust::host_vector<float>(centroids.cnt * centroids.dim_cnt);
-	for (int i = 0; i < result.dim_cnt; i++) {
-		for (int j = 0; j < result.centr_cnt; j++) {
-			temp[i + j * result.dim_cnt] = centroids.coordinates[i][j];
+	for (int i = 0; i < result.centr_cnt; i++) {
+		for (int j = 0; j < result.dim_cnt; j++) {
+			temp[j * result.centr_cnt + i] = centroids.coordinates[j][i];
 		}
 	}
 	thrust::copy(temp.begin(), temp.end(), result.centr_coord.begin());
@@ -83,17 +71,18 @@ Thrust2Data createThrust2Data(const Points& points, const Centroids& centroids)
 }
 
 
-struct dim_functor
+struct dim_index_functor
 {
-	const int dim_cnt;
-	const int centroid_index;
+	const int point_cnt;
+	const int centr_index;
+	const int centr_cnt;
 
-	dim_functor(int _dim_cnt, int _centroid_index) : dim_cnt(_dim_cnt), centroid_index(_centroid_index) {}
+	dim_index_functor(int _point_cnt, int _centr_index, int _centr_cnt) : point_cnt(_point_cnt), centr_index(_centr_index), centr_cnt(_centr_cnt) {}
 
 	__host__ __device__
 		int operator()(const int& i)
 	{
-		return i % dim_cnt + centroid_index * dim_cnt;
+		return i / point_cnt * centr_cnt + centr_index;
 	}
 };
 
@@ -109,11 +98,27 @@ struct dist_functor
 };
 
 
-struct point_index_functor
+struct point_coord_functor
+{
+	const int dim_cnt;
+	const int points_cnt;
+
+	point_coord_functor(int _dim_cnt, int _points_cnt) : dim_cnt(_dim_cnt), points_cnt(_points_cnt) {}
+
+	__host__ __device__
+		int operator()(const int& i)
+	{
+		int j = i % dim_cnt;
+		return j * points_cnt + i / dim_cnt;
+	}
+};
+
+
+struct key_functor
 {
 	const int dim_cnt;
 
-	point_index_functor(int _dim_cnt) : dim_cnt(_dim_cnt) {}
+	key_functor(int _dim_cnt) : dim_cnt(_dim_cnt) {}
 
 	__host__ __device__
 		int operator()(const int& i)
@@ -123,16 +128,20 @@ struct point_index_functor
 };
 
 
-void calculate_dist(Thrust2Data& data, int centroid_index) {
-	thrust::counting_iterator<int> counting_it(0);
-	auto dim_it = thrust::make_transform_iterator(counting_it, dim_functor(data.dim_cnt, centroid_index));
-	auto perm_it = thrust::make_permutation_iterator(data.centr_coord.begin(), dim_it);
+void calculate_dist(Thrust3Data& data, int centroid_index)
+{
+	thrust::counting_iterator<int> tab_index_it(0);
+	auto dim_index_it = thrust::make_transform_iterator(tab_index_it, dim_index_functor(data.points_cnt, centroid_index, data.centr_cnt));
+	auto perm_dim_it = thrust::make_permutation_iterator(data.centr_coord.begin(), dim_index_it);
 
-	thrust::transform(data.points_coord.begin(), data.points_coord.end(), perm_it, data.buff.begin(), dist_functor());
+	thrust::transform(data.points_coord.begin(), data.points_coord.end(), perm_dim_it, data.buff.begin(), dist_functor());
 
-	auto point_it = thrust::make_transform_iterator(counting_it, point_index_functor(data.dim_cnt));
+	auto point_coord_it = thrust::make_transform_iterator(tab_index_it, point_coord_functor(data.dim_cnt, data.points_cnt));
+	auto perm_coord_it = thrust::make_permutation_iterator(data.buff.begin(), point_coord_it);
 
-	thrust::reduce_by_key(point_it, point_it + data.points_cnt * data.dim_cnt, data.buff.begin(), thrust::make_discard_iterator(), data.act_dist.begin());
+	auto key_it = thrust::make_transform_iterator(tab_index_it, key_functor(data.dim_cnt));
+
+	thrust::reduce_by_key(key_it, key_it + data.points_cnt * data.dim_cnt, perm_coord_it, thrust::make_discard_iterator(), data.act_dist.begin());
 }
 
 
@@ -167,41 +176,26 @@ struct count_new_centroids_functor
 };
 
 
-int find_nearest_centroids(Thrust2Data& data)
+int find_nearest_centroids(Thrust3Data& data)
 {
 	thrust::fill(data.min_dist.begin(), data.min_dist.end(), std::numeric_limits<float>::infinity());
-	
+
 	for (int i = 0; i < data.centr_cnt; i++) {
 		calculate_dist(data, i);
 
 		thrust::for_each(thrust::make_zip_iterator(data.min_dist.begin(), data.act_dist.begin(), data.new_centr_indexes.begin()),
-				thrust::make_zip_iterator(data.min_dist.end(), data.act_dist.end(), data.new_centr_indexes.end()),
-				thrust::make_zip_function(update_min_dist_functor(i)));
+						 thrust::make_zip_iterator(data.min_dist.end(), data.act_dist.end(), data.new_centr_indexes.end()),
+						 thrust::make_zip_function(update_min_dist_functor(i)));
 	}
 
 	int result = thrust::count_if(thrust::make_zip_iterator(data.centr_indexes.begin(), data.new_centr_indexes.begin()),
-		thrust::make_zip_iterator(data.centr_indexes.end(), data.new_centr_indexes.end()),
-		count_new_centroids_functor());
+								  thrust::make_zip_iterator(data.centr_indexes.end(), data.new_centr_indexes.end()),
+								  count_new_centroids_functor());
 
 	thrust::swap(data.centr_indexes, data.new_centr_indexes);
 
 	return result;
 }
-
-
-struct points_functor
-{
-	const int dim_cnt;
-	const int dim;
-
-	points_functor(int _dim_cnt, int _dim) : dim_cnt(_dim_cnt), dim(_dim) {}
-
-	__host__ __device__
-		float operator()(const int& i)
-	{
-		return i * dim_cnt + dim;
-	}
-};
 
 
 struct equal_functor
@@ -221,29 +215,23 @@ struct equal_functor
 };
 
 
-void recalculate_centroids(Thrust2Data& data)
+void recalculate_centroids(Thrust3Data& data)
 {
-	thrust::counting_iterator<int> tab_index_it(0);
-
 	for (int i = 0; i < data.centr_cnt; i++) {
-
 		int elems = thrust::count(data.centr_indexes.begin(), data.centr_indexes.end(), i);
 
 		for (int j = 0; j < data.dim_cnt; j++) {
-			auto point_it = thrust::make_transform_iterator(tab_index_it, points_functor(data.dim_cnt, j));
-			auto perm_it = thrust::make_permutation_iterator(data.points_coord.begin(), point_it);
+			float val = thrust::transform_reduce(thrust::make_zip_iterator(data.points_coord.begin() + j * data.points_cnt, data.centr_indexes.begin()),
+												 thrust::make_zip_iterator(data.points_coord.begin() + j * data.points_cnt + data.points_cnt, data.centr_indexes.end()),
+												 equal_functor(i),
+												 0,
+												 thrust::plus<float>());
 
-			float val = thrust::transform_reduce(thrust::make_zip_iterator(perm_it, data.centr_indexes.begin()),
-				thrust::make_zip_iterator(perm_it + data.points_cnt, data.centr_indexes.end()),
-				equal_functor(i),
-				0,
-				thrust::plus<float>());
-			
 			if (elems == 0) {
-				data.temp[j + data.dim_cnt * i] = std::numeric_limits<float>::infinity();
+				data.temp[i + data.centr_cnt * j] = std::numeric_limits<float>::infinity();
 			}
 			else {
-				data.temp[j + data.dim_cnt * i] = val / elems;
+				data.temp[i + data.centr_cnt * j] = val / elems;
 			}
 		}
 	}
@@ -252,21 +240,20 @@ void recalculate_centroids(Thrust2Data& data)
 }
 
 
-void create_result(const Thrust2Data& data, Points& points, Centroids& centroids)
+void create_result(const Thrust3Data& data, Points& points, Centroids& centroids)
 {
 	thrust::copy(data.centr_indexes.begin(), data.centr_indexes.end(), points.centroids_indexes);
 
-	for (int i = 0; i < data.centr_cnt; i++) {
-		for (int j = 0; j < data.dim_cnt; j++) {
-			centroids.coordinates[j][i] = data.centr_coord[j + data.dim_cnt * i];
-		}
+	for (int i = 0; i < data.dim_cnt; i++) {
+		thrust::copy(data.centr_coord.begin() + i * data.centr_cnt, data.centr_coord.begin() + i * data.centr_cnt + data.centr_cnt, centroids.coordinates[i]);
 	}
 }
 
 
-int KMeansAlg::thrust2_version(Points& points, Centroids& centroids, float threshold, int max_it)
-{	
-	Thrust2Data data = createThrust2Data(points, centroids);
+
+int KMeansAlg::thrust3_version(Points& points, Centroids& centroids, float threshold, int max_it)
+{
+	Thrust3Data data = createThrust3Data(points, centroids);
 
 	int iterations = 0;
 	int cent_changes = points.cnt;

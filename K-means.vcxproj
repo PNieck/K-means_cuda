@@ -77,9 +77,9 @@
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CudaCompile Include="kernel.cu" />
     <CudaCompile Include="thrust.cu" />
-    <CudaCompile Include="Thrust2.cu" />
+    <CudaCompile Include="thrust2.cu" />
+    <CudaCompile Include="thrust3.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Centroids.cpp" />

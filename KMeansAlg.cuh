@@ -3,26 +3,32 @@
 #include "Points.h"
 #include "Centroids.h"
 
-#include <thrust/device_vector.h>
-#include <thrust/host_vector.h>
-
-
-#define DEFAULT_TRESHOLD 0.01f
-#define DEFAULT_MAX_IT   3000000
+#include <chrono>
 
 
 class KMeansAlg
 {
+private:
+	std::chrono::high_resolution_clock::time_point start;
+	std::chrono::high_resolution_clock::time_point stop;
 public:
 	static bool data_check(const Centroids& centroids, const Points& points);
 
 	static void init_centroids(Centroids& centroids, const Points& points);
 
-	static void cpu_version(Points& points, Centroids& centroids, float threshold = DEFAULT_TRESHOLD, int max_it = DEFAULT_MAX_IT);
+	void start_timer();
 
-	static void thrust_version(Points& points, Centroids& centroids, float threshold = DEFAULT_TRESHOLD, int max_it = DEFAULT_MAX_IT);
+	void stop_timer();
 
-	static void thrust2_version(Points& points, Centroids& centroids, float threshold = DEFAULT_TRESHOLD, int max_it = DEFAULT_MAX_IT);
+	double timer_result();
+
+	static int cpu_version(Points& points, Centroids& centroids, float threshold, int max_it);
+
+	static int thrust_version(Points& points, Centroids& centroids, float threshold, int max_it);
+
+	static int thrust2_version(Points& points, Centroids& centroids, float threshold, int max_it);
+
+	static int thrust3_version(Points& points, Centroids& centroids, float threshold, int max_it);
 };
 
 

@@ -46,11 +46,11 @@ void DataHandler::Deserialize(const std::string& path, Points& points, Centroids
 
 Json::Value SerializePoints(const Points& points)
 {
-	Json::Value points_arr(Json::arrayValue);
+	Json::Value points_arr;
 	Json::Value one_point;
 	Json::Value point_coord(Json::arrayValue);
 
-	for (int i = 0; i < points.cnt; i++)
+	/*for (int i = 0; i < points.cnt; i++)
 	{
 		for (int j = 0; j < points.dim_cnt; j++)
 		{
@@ -62,7 +62,9 @@ Json::Value SerializePoints(const Points& points)
 		point_coord.clear(); 
 
 		points_arr.append(one_point);
-	}
+	}*/
+
+	points_arr["centroids"] = points.centroids_indexes;
 
 	return points_arr;
 }
@@ -93,7 +95,6 @@ void DataHandler::Serialize(const std::string& path, const Points& points, const
 {
 	Json::Value result;
 
-	result["coord_cnt"] = points.dim_cnt;
 	result["centroids"] = SerializeCentroids(centroids);
 	result["points"] = SerializePoints(points);
 

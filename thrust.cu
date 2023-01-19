@@ -115,21 +115,6 @@ struct count_new_centroids_functor
 };
 
 
-struct update_centroids_functor
-{
-	__host__ __device__
-		thrust::tuple<int, int> operator()(const thrust::tuple<int, int>& tuple)
-	{
-		if (thrust::get<0>(tuple) != thrust::get<1>(tuple)) {
-			thrust::tuple<int, int> result(thrust::get<1>(tuple), thrust::get<1>(tuple));
-			return result;
-		}
-
-		return tuple;
-	}
-};
-
-
 int find_nearest_centroids(ThrustData& data)
 {
 	thrust::fill(data.min_dist.begin(), data.min_dist.end(), std::numeric_limits<float>::infinity());
@@ -146,10 +131,7 @@ int find_nearest_centroids(ThrustData& data)
 								  thrust::make_zip_iterator(data.centr_indexes.end(),   data.new_centr_indexes.end()),
 								  count_new_centroids_functor());
 
-	thrust::transform(thrust::make_zip_iterator(data.centr_indexes.begin(), data.new_centr_indexes.begin()),
-		thrust::make_zip_iterator(data.centr_indexes.end(), data.new_centr_indexes.end()),
-		thrust::make_zip_iterator(data.centr_indexes.begin(), data.new_centr_indexes.begin()),
-		update_centroids_functor());
+	thrust::swap(data.centr_indexes, data.new_centr_indexes);
 
 	return result;
 }
@@ -204,35 +186,21 @@ void create_result(const ThrustData& data, Points& points, Centroids& centroids)
 }
 
 
-void KMeansAlg::thrust_version(Points& points, Centroids& centroids, float threshold, int max_it)
+int KMeansAlg::thrust_version(Points& points, Centroids& centroids, float threshold, int max_it)
 {
-	cudaEvent_t stop, start;
-	float time, time_data;
-
-	cudaEventCreate(&stop);
-	cudaEventCreate(&start);
-
-	cudaEventRecord(start, 0);
-	
 	ThrustData data = createThrustData(points, centroids);
 
 	int iterations = 0;
 	int cent_changes = points.cnt;
 
-	while (cent_changes / points.cnt > threshold && iterations < max_it) {
-		cent_changes = find_nearest_centroids(data); 
+	while ((float)cent_changes / (float)points.cnt > threshold && iterations < max_it) {
+		cent_changes = find_nearest_centroids(data);
 
 		recalculate_centroids(data);
+		iterations++;
 	}
 
 	create_result(data, points, centroids);
 
-	cudaEventRecord(stop, 0);
-
-	cudaEventRecord(stop, 0);
-	cudaEventElapsedTime(&time, start, stop);
-	std::cout << "GPU version 1 time: " << time << " (milliseconds). With memory copying " << std::endl;
-
-	cudaEventDestroy(start);
-	cudaEventDestroy(stop);
+	return iterations;
 }
